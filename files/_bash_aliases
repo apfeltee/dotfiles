@@ -1,0 +1,32 @@
+#!/bin/bash
+
+function cdd
+{
+  cd "$HOME/Desktop"
+}
+
+function mount
+{
+  if [[ -n $1 ]]; then
+    /bin/mount "$@"
+  else
+    /bin/mount | column -t
+  fi
+}
+
+alias ..='cd ..'
+alias tree='tree -C'
+alias gdb='gdb -q'
+alias apache='sudo /etc/init.d/apache2'
+alias aptdeb='aptitude download'
+alias aptis='aptis'
+alias emerge='sudo apt-get install'
+alias enterdir='cd'
+alias grep='grep --color=auto'
+alias rgrep='rgrep --color=auto'
+alias ls='ls --color=auto'
+#alias file='file -L'
+alias pkgfind='apt-cache search'
+alias tailerr='tail -f /var/log/apache2/error.log'
+alias whois="whois -H"
+
