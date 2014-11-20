@@ -13,7 +13,7 @@ Dir.glob("files/_*").each do |file|
   # make absolute path for the destination
   destpath = File.join(homedir, destname)
   # make sure we're not accidently unlinking an existing rcfile
-  if File.symlink?(destpath) && not File.file?(destpath) then
+  if File.symlink?(destpath) then
     puts "path '#{destpath}' is a symlink, will be overwritten"
     File.unlink(destpath)
   elsif File.file?(destpath) then
