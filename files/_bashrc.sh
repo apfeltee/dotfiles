@@ -112,14 +112,30 @@ function __strjoin
   echo "$*"
 }
 
+###############################
+####### platform ##############
+###############################
+# remove GNU/ from os name, and turn lowercase
+g_operatingsystem="$(uname -o | perl -pe '$_=lc($_); s#gnu/##gi')"
+if [[ "$g_operatingsystem" == "cygwin" ]]; then
+  g_os_cygwin=1
+  export DISPLAY=:0.0
+  # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
+  # to include native support for symbolic links
+  export CYGWIN="winsymlinks:nativestrict"
+fi
+
 #####################################
 ############ language settings ######
 #####################################
-#_user_lang="en_US.UTF-8"
-_user_lang="C.utf8"
-export LC_ALL="$_user_lang"
-export LANG="$_user_lang"
-export LANGUAGE="$_user_lang"
+if [[ "$g_operatingsystem" == "cygwin" ]]; then
+  # this makes Linux barf, for some reason
+  #_user_lang="en_US.UTF-8"
+  _user_lang="C.utf8"
+  export LC_ALL="$_user_lang"
+  export LANG="$_user_lang"
+  export LANGUAGE="$_user_lang"
+fi
 
 # get rid of retarded builtins
 enable -n kill
@@ -130,9 +146,13 @@ enable -n kill
 ###############################
 #export EDITOR="$HOME/bin/edit"
 
-# needed for a variety of java programs
-export JAVA_HOME="C:/progra~1/Java/jdk/"
-export JRE_HOME="C:/progra~1/Java/jre/"
+if [[ "$g_operatingsystem" == "cygwin" ]]; then
+  # needed for a variety of java programs
+  # but these are typically set by Linux very differently, so
+  # this is only for cygwin, obviously
+  export JAVA_HOME="C:/progra~1/Java/jdk/"
+  export JRE_HOME="C:/progra~1/Java/jre/"
+fi
 ###############################
 ####### PATH elements #########
 ###############################
@@ -162,34 +182,39 @@ userpath=(
   #"/cygdrive/c/Windows/System32/WindowsPowerShell/v1.0"
 )
 
-#export PATH="$(__strjoin ':' "${userpath[@]}")"
-export PATH="$(
-  ruby --disable-gems -e '
-    class FStat < File::Stat
-      attr_accessor :path
-      def initialize(path)
-        @path = path
-        super(path)
-      end
-    end
-    newpath = []
-    oldpath = ARGV
-    ## uncomment this line to use path entries added by system and/or conemu
-    ## keep in mind that it adds A TON of paths that are not really useful in cygwin!
-    ## also, keep in mind that reducing $PATH can result in a faster cygwin environment
-    #oldpath = ENV["PATH"].split(/:/) + ARGV
-    oldpath.map{|f| if File.exist?(f) then FStat.new(f) else nil end }.each do |pa|
-      next if pa.nil?
-      if File.directory?(pa.path) then
-        if not newpath.include?(pa) then
-          #$stderr.puts("pa => #{pa.path.dump}")
-          newpath.push(pa.path)
+if ! type ruby >/dev/null; then
+  export PATH="$(__strjoin ':' "${userpath[@]}")"
+else
+  # if ruby exists, then use a more sophisticated way of removing duplicates
+  # and non-existant dirs from $PATH
+  export PATH="$(
+    ruby --disable-gems -e '
+      class FStat < File::Stat
+        attr_accessor :path
+        def initialize(path)
+          @path = path
+          super(path)
         end
       end
-    end
-    $stdout.print(newpath.join(":"))
-  ' "${userpath[@]}"
-)"
+      newpath = []
+      oldpath = ARGV
+      ## uncomment this line to use path entries added by system and/or conemu
+      ## keep in mind that it adds A TON of paths that are not really useful in cygwin!
+      ## also, keep in mind that reducing $PATH can result in a faster cygwin environment
+      #oldpath = ENV["PATH"].split(/:/) + ARGV
+      oldpath.map{|f| if File.exist?(f) then FStat.new(f) else nil end }.each do |pa|
+        next if pa.nil?
+        if File.directory?(pa.path) then
+          if not newpath.include?(pa) then
+            #$stderr.puts("pa => #{pa.path.dump}")
+            newpath.push(pa.path)
+          end
+        end
+      end
+      $stdout.print(newpath.join(":"))
+    ' "${userpath[@]}"
+  )"
+fi
 #export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/bin:/cloud/gdrive/portable/devtools/dmd/dmd2/windows/bin/:$PATH"
 
 export MANPATH="$MANPATH:/usr/share/man/:/opt/mono/share/man/"
@@ -212,27 +237,17 @@ done
 unset files
 
 ###############################
-####### platform ##############
-###############################
-g_operatingsystem="$(uname -o | tr A-Z a-z)"
-if [[ "$g_operatingsystem" == "cygwin" ]]; then
-  g_os_cygwin=1
-  export DISPLAY=:0.0
-  # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
-  # to include native support for symbolic links
-  export CYGWIN="winsymlinks:nativestrict"
-fi
-
-###############################
 ###### lessfilter #############
 ###############################
 #export LESS='-R'
 #export LESSOPEN='|~/.lessfilter %s'
 
-# needed so sudo'd apps can connect to x11
-if [[ "$DISPLAY" ]] && [[ $g_os_cygwin == 0 ]]; then
-  if type xhost >/dev/null; then
-    xhost local:root > /dev/null
+if [[ "$g_operatingsystem" == "cygwin" ]]; then
+  # needed so sudo'd apps can connect to x11
+  if [[ "$DISPLAY" ]] && [[ $g_os_cygwin == 0 ]]; then
+    if type xhost >/dev/null; then
+      xhost local:root > /dev/null
+    fi
   fi
 fi
 
@@ -303,11 +318,14 @@ if [[ "$g_cfg_loadcompletion" == "1" ]]; then
   fi
 fi
 
-# visual studio environment variables
-visualstudio_envfile="$HOME/.visualstudio.env"
-if [[ -f "$visualstudio_envfile" ]]; then
-  __bashrc_debugmsg "including visual studio environment variables file <$visualstudio_envfile>"
-  source "$visualstudio_envfile"
+# this obviously doesn't make sense on anything other than windows
+if [[ "$g_operatingsystem" == "cygwin" ]]; then
+  # visual studio environment variables
+  visualstudio_envfile="$HOME/.visualstudio.env"
+  if [[ -f "$visualstudio_envfile" ]]; then
+    __bashrc_debugmsg "including visual studio environment variables file <$visualstudio_envfile>"
+    source "$visualstudio_envfile"
+  fi
 fi
 
 unset __bashrc_debugmsg g_cfg_debug g_cfg_loadcompletion
