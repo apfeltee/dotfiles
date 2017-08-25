@@ -1,5 +1,66 @@
 
+" need to install this scheme first, obviously
+"colorscheme badwolf
 
+" make backspace behave uh.. "normally"
+set backspace=indent,eol,start
+
+" enable syntax highlighting
+syntax enable
+
+" number of visual spaces per tab
+set tabstop=4
+
+" number of spaces in tab when editing
+set softtabstop=4
+
+" tabs are spaces
+set expandtab
+
+" show line numbers
 set number
+
+" show command in bottom bar
+set showcmd
+
+" highlight current line
+set cursorline
+
+" load filetype-specific indent files
+filetype indent on
+
+" visual autocomplete for command menu
+set wildmenu
+
+" no need to redraw *all the time* -- so redraw only when needed
+set lazyredraw
+
+" highlight matching parentheses, braces, brackets, etc
+set showmatch
+
+" improve searching:
+" incsearch = search as chars are entered
+" hlsearch = highlight matches
+" makes it behave like chrome inpage search!
+set incsearch
+set hlsearch
+
+" turn off search highlight after hitting ',<space>'
+nnoremap <leader><space> :nohlsearch<CR>
+
+" enable folding
+set foldenable
+
+" open most folds by default
+set foldlevelstart=10
+
+" maximum of 10 nested folds
+set foldnestmax=10
+
+" space open/closes folds
+nnoremap <space> za
+
+" fold based in indent level
+set foldmethod=indent
 
 

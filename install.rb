@@ -1,8 +1,15 @@
 #!/usr/bin/env ruby
 
+require "pp"
+
+# self explanatory
 homedir = ENV["HOME"]
+
 # get full path to this directory
-thisdir = File.expand_path File.dirname(__FILE__)
+thisdir = File.expand_path(File.dirname(__FILE__))
+
+# regex to match file extension(s) for some files
+fextpattern = /\.(sh|rb)$/
 
 Dir.glob("files/_*").each do |file|
   filename = File.basename(file)
@@ -10,6 +17,10 @@ Dir.glob("files/_*").each do |file|
   filepath = File.join(thisdir, file)
   # replace underscore with a dot
   destname = filename.gsub(/(^_)/, ".")
+  # remove file extension from some files
+  if m = destname.match(fextpattern) then
+    destname = destname.gsub(fextpattern, "")
+  end
   # make absolute path for the destination
   destpath = File.join(homedir, destname)
   # make sure we're not accidently unlinking an existing rcfile
