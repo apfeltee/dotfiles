@@ -146,18 +146,44 @@ cppincludepaths=(
 export CPATH="$(IFS=":"; echo "${cppincludepaths[*]}")"
 export CPLUS_INCLUDE_PATH="$CPATH"
 
+#########################################################
+#### this is just a dump from a termux bash session #####
+#########################################################
+# SHELL=/data/data/com.termux/files/usr/bin/bash
+# PREFIX=/data/data/com.termux/files/usr
+# PWD=/data/data/com.termux/files/home/remote/dotfiles
+# EXTERNAL_STORAGE=/sdcard
+# LD_PRELOAD=/data/data/com.termux/files/usr/lib/libtermux-exec.so
+# HOME=/data/data/com.termux/files/home
+# LANG=en_US.UTF-8
+# TMPDIR=/data/data/com.termux/files/usr/tmp
+# ANDROID_DATA=/data
+# TERM=xterm-256color
+# SHLVL=0
+# ANDROID_ROOT=/system
+# PATH=/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/usr/bin/applets
+# OLDPWD=/data/data/com.termux/files/home/remote/dotfiles/files
+# _=/data/data/com.termux/files/usr/bin/env
 
 ###############################
 ####### PATH elements #########
 ###############################
 # don't use $JAVA_HOME or $JRE_HOME here!
 userpath=(
+
+  # termux (!!!THESE HAVE TO BE AT THE TOP!!!)
+  "/data/data/com.termux/files/bin"
+  "/data/data/com.termux/files/usr/bin"
+  "/data/data/com.termux/files/usr/bin/applets"
+
+  # standard paths (unix, linux, cygwin, et cetera)
   "/usr/bin"
   "/bin"
   "/usr/sbin"
   "/usr/local/bin"
   "$HOME/bin"
   "$HOME/.local/bin"
+
 
   # contains symlinks for windows commands
   "${g_os_cdirpre}/cloud/local/dev/winbin/bin"
