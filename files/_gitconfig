@@ -1,0 +1,14 @@
+[core]
+  pager = 
+
+[user]
+  email = root@localhost
+  name = John Doe
+
+[color]
+  diff = auto
+  status = auto
+  branch = auto
+  interactive = auto
+  ui = true
+  pager = true

@@ -1,37 +1,64 @@
 #!/usr/bin/env ruby
 
 require "pp"
+require "optparse"
 
-# self explanatory
-homedir = ENV["HOME"]
+def msg(fmt, *a, **kw)
+  str = (if (a.empty? && kw.empty?) then fmt else sprintf(fmt, *a, **kw) end)
+  $stderr.printf("%s\n", str)
+end
 
-# get full path to this directory
-thisdir = File.expand_path(File.dirname(__FILE__))
+def inst(filepath, destpath, aslink, force)
+    # make sure we're not accidently unlinking an existing rcfile
+    if File.symlink?(destpath) then
+      msg("path %p is a symlink, will be overwritten", destpath)
+      File.unlink(destpath)
+    elsif File.file?(destpath) then
+      msg("destination %p already exists, but it's not a symlink!", destpath)
+      if force then
+        msg("deleting %p ...", destpath)
+        File.delete(destpath)
+      else
+        msg("refusing to continue -- fix this first before running this script again")
+        exit(1)
+      end
+    end
+    if aslink then
+      # then, just symlink it
+      msg("symlink(%p, %p)", filepath, destpath)
+      File.symlink(filepath, destpath)
+    else
+      msg("copy(%p, %p)", filepath, destpath)
+      File.write(destpath, File.read(filepath))
+    end
+end
 
-# regex to match file extension(s) for some files
-fextpattern = /\.(sh|rb)$/
+begin
+  # self explanatory
+  homedir = ENV["HOME"]
 
-Dir.glob("files/_*").each do |file|
-  filename = File.basename(file)
-  # get absolute path of $file
-  filepath = File.join(thisdir, file)
-  # replace underscore with a dot
-  destname = filename.gsub(/(^_)/, ".")
-  # remove file extension from some files
-  if m = destname.match(fextpattern) then
-    destname = destname.gsub(fextpattern, "")
+  # regex to match file extension(s) for some files
+  fextpattern = /\.(sh|rb|pl|ya?ml|cfg|txt)$/
+  force = false
+  aslink = true
+  OptionParser.new{|prs|
+    prs.on("-c", "--copy", "copy files instead of using symbolic links"){
+      aslink = false
+    }
+    prs.on("-f", "--force", "force overwrite of existing files (possibly dangerous!)"){
+      force = true
+    }
+  }.parse!
+  Dir.glob(File.join(__dir__, "files/_*")).each do |filepath|
+    basename = File.basename(filepath)
+    # replace underscore with a dot
+    destname = basename.gsub(/(^_)/, ".")
+    # remove file extension from some files
+    if m = destname.match(fextpattern) then
+      destname = destname.gsub(fextpattern, "")
+    end
+    # make absolute path for the destination
+    destpath = File.join(homedir, destname)
+    inst(filepath, destpath, aslink, force)
   end
-  # make absolute path for the destination
-  destpath = File.join(homedir, destname)
-  # make sure we're not accidently unlinking an existing rcfile
-  if File.symlink?(destpath) then
-    puts "path '#{destpath}' is a symlink, will be overwritten"
-    File.unlink(destpath)
-  elsif File.file?(destpath) then
-    puts "destination '#{destpath}' already exists, but it's not a symlink -- refusing to continue!"
-    puts "fix this first before running this script again"
-  end
-  # then, just symlink it
-  puts "symlink(#{filepath.inspect}, #{destpath.inspect})"
-  File.symlink(filepath, destpath)
 end

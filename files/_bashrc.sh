@@ -1,5 +1,15 @@
-#!/bin/bash
-#set -x
+
+##
+# this silly "hack" is need to get cygwin to launch in sandboxie.
+# for some r
+# the PATH is later cleaned up anyway.
+## 
+export PATH="/bin:/usr/bin:$PATH"
+exec zsh
+
+##################################################################
+## none of this below is reached if "exec zsh" is uncommented!! ##
+##################################################################
 
 # debug settings
 g_cfg_debug=0
@@ -20,7 +30,8 @@ g_cfg_loadcompletion=0
 # * Recursive globbing, e.g. `echo **/*.txt`
 for option in autocd globstar; do
   shopt -s "$option" 2> /dev/null;
-done;
+done
+unset option
 
 # enable case-insensitive glob, particularly important-ish on cygwin
 shopt -s nocaseglob
@@ -68,7 +79,7 @@ HISTCONTROL="erasedups:ignoreboth"
 export HISTIGNORE="&:[ ]*:exit:ls:bg:fg:history"
 # Useful timestamp format
 HISTTIMEFORMAT='%F %T '
-## BETTER DIRECTORY NAVIGATION ##
+#-- BETTER DIRECTORY NAVIGATION
 # Prepend cd to directory names automatically
 shopt -s autocd
 # Correct spelling errors during tab-completion
@@ -119,23 +130,29 @@ function __strjoin
 g_operatingsystem="$(uname -o | perl -pe '$_=lc($_); s#gnu/##gi')"
 if [[ "$g_operatingsystem" == "cygwin" ]]; then
   g_os_cygwin=1
+  g_os_cdirpre="/cygdrive/c"
   export DISPLAY=:0.0
   # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
   # to include native support for symbolic links
-  export CYGWIN="winsymlinks:nativestrict"
+  export CYGWIN="winsymlinks:nativestrict wincmdln"
+elif [[ "$g_operatingsystem" =~ msys* ]]; then
+  g_os_msys=1
+  g_os_cdirpre="/c"
 fi
 
 #####################################
 ############ language settings ######
 #####################################
-if [[ "$g_operatingsystem" == "cygwin" ]]; then
+#if [[ "$g_operatingsystem" =~ (cygwin|msys*) ]]; then
   # this makes Linux barf, for some reason
   #_user_lang="en_US.UTF-8"
-  _user_lang="C.utf8"
-  export LC_ALL="$_user_lang"
-  export LANG="$_user_lang"
-  export LANGUAGE="$_user_lang"
-fi
+  #user_lang="C.utf8"
+  #export LC_ALL="$_user_lang"
+  #export LANG="$_user_lang"
+  #export LANGUAGE="$_user_lang"
+  #unset user_lang
+  export LANG=C.UTF-8
+#fi
 
 # get rid of retarded builtins
 enable -n kill
@@ -146,41 +163,67 @@ enable -n kill
 ###############################
 #export EDITOR="$HOME/bin/edit"
 
-if [[ "$g_operatingsystem" == "cygwin" ]]; then
+if [[ "$g_operatingsystem" =~ (cygwin|msys*) ]]; then
   # needed for a variety of java programs
   # but these are typically set by Linux very differently, so
   # this is only for cygwin, obviously
   export JAVA_HOME="C:/progra~1/Java/jdk/"
   export JRE_HOME="C:/progra~1/Java/jre/"
 fi
+
+###############################
+#### C/C++ Include Paths ######
+###############################
+cppincludepaths=(
+  "${g_os_cdirpre}/cloud/local/sharedcode/include"
+)
+export CPATH="$(IFS=":"; echo "${cppincludepaths[*]}")"
+export CPLUS_INCLUDE_PATH="$CPATH"
+
+
 ###############################
 ####### PATH elements #########
 ###############################
 userpath=(
+  "/usr/bin"
   "/bin"
-  "/usr/bin/"
-  "/usr/sbin/"
-  "$HOME/bin/"
+  "/usr/sbin"
+  "/usr/local/bin"
+  "$HOME/bin"
+  # symlink to the clang-fixer script
+  "${g_os_cdirpre}/cloud/local/dev/clangfix/bin"
   # programs that technically exist for UNIX-ish oses, but are a
   # royal pain in the ass to build on cygwin
-  "/cygdrive/c/Users/${USER}/.cargo/bin"
-  "/cygdrive/c/scripting/nodejs/"
-  "/cygdrive/c/Users/${USER}/AppData/Roaming/npm"
-  "/cygdrive/c/ProgramData/Oracle/Java/javapath"
-  "/cygdrive/c/progra~1/Java/jdk/bin"
-  "/cygdrive/c/cloud/gdrive/portable/video/mkvtoolnix/"
+  "${g_os_cdirpre}/Users/${USER}/.cargo/bin"
+  "${g_os_cdirpre}/scripting/nodejs/"
+  "${g_os_cdirpre}/Users/${USER}/AppData/Roaming/npm"
+  "${g_os_cdirpre}/progra~1/Java/jre1.8.0_151/bin/"
+  "${g_os_cdirpre}/progra~1/Java/jdk/bin/"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/other"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/go/bin"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/freebasic"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/nasm"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/borlandcpp/bin"
+  #"${g_os_cdirpre}/ProgramData/Oracle/Java/javapath"
+  #"${g_os_cdirpre}/progra~1/Java/jdk/bin"
+  #"${g_os_cdirpre}/cloud/gdrive/portable/video/mkvtoolnix/"
+  #"${g_os_cdirpre}/cloud/local/code/programs/qemu/_installed/"
 
   # distinctly windows-specific paths
-  "/cloud/gdrive/portable/devtools/dmd/dmd2/windows/bin/"
-  #"/cygdrive/c/ProgramData/Chocolatey/bin"
-  "/cygdrive/c/Progra~1/qemu"
-  "/cygdrive/c/tools/dart-sdk/bin/"
-  "/cygdrive/c/Progra~1/dotnet"
-  #"/cygdrive/c/PROGRA~2/MICROS~1/Windows/v8.1A/bin/NETFX4~1.1TO"
-  #"/cygdrive/c/Windows"
-  #"/cygdrive/c/Windows/system32"
-  #"/cygdrive/c/Windows/System32/WindowsPowerShell/v1.0"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/apache-ant/bin"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/dmd/dmd2/windows/bin"
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/ldc/bin"
+  "${g_os_cdirpre}/cloud/gdrive/portable/unsorted"
+  #"${g_os_cdirpre}/ProgramData/Chocolatey/bin"
+  "${g_os_cdirpre}/Progra~1/qemu"
+  "${g_os_cdirpre}/tools/dart-sdk/bin"
+  #"${g_os_cdirpre}/Progra~1/dotnet"
+  #"${g_os_cdirpre}/users/$USER/.dotnet/x64"
+  #"${g_os_cdirpre}/Windows"
+  #"${g_os_cdirpre}/Windows/system32"
+  #"${g_os_cdirpre}/Windows/System32/WindowsPowerShell/v1.0"
 )
+
 
 if ! type ruby >/dev/null; then
   export PATH="$(__strjoin ':' "${userpath[@]}")"
@@ -215,26 +258,15 @@ else
     ' "${userpath[@]}"
   )"
 fi
+unset userpath
 #export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/bin:/cloud/gdrive/portable/devtools/dmd/dmd2/windows/bin/:$PATH"
 
 export MANPATH="$MANPATH:/usr/share/man/:/opt/mono/share/man/"
 # needed for nodejs
-export NODE_PATH="$APPDATA/Roaming/npm/node_modules"
+export NODE_PATH="C:/Users/$USER/AppData/Roaming/npm/node_modules"
 # fix for sdl apps under cygwin
 export SDL_STDIO_REDIRECT="no"
 
-###############################
-###### youtube api key ########
-###############################
-files=("ytapikey.sh" "imgurapikey.sh" "redditapikey.sh")
-for file in "${files[@]}"; do
-  path="$HOME/.config/webapi/$file"
-  if [[ -f "$path" ]]; then
-    __bashrc_debugmsg "sourcing webapi file <$path>"
-    source "$path"
-  fi
-done
-unset files
 
 ###############################
 ###### lessfilter #############
@@ -242,7 +274,7 @@ unset files
 #export LESS='-R'
 #export LESSOPEN='|~/.lessfilter %s'
 
-if [[ "$g_operatingsystem" == "cygwin" ]]; then
+if [[ "$g_operatingsystem" =~ (cygwin|msys*) ]]; then
   # needed so sudo'd apps can connect to x11
   if [[ "$DISPLAY" ]] && [[ $g_os_cygwin == 0 ]]; then
     if type xhost >/dev/null; then
@@ -279,12 +311,33 @@ if [[ "$color_prompt" == "yes" ]]; then
   # setup PS1 to be pretty
   # the current template emulates cygwin
   ps_red="\\e[0;31m"
-  ps_blue="\\e[0;34m"
+  ps_green="\\e[0;32m"
   ps_yellow="\\e[0;33m"
-  ps_end="\\e[0m"
+  ps_blue="\\e[0;34m"
+  ps_magenta="\\e[0;35m"
+  ps_cyan="\\e[0;35m"
+  ps_end=$"\e[0m"
+  # ps_extra is for additional, perhaps os-specific information.
+  # for example, a reminder that you're running msys2!
+  ps_extra=""
+  if [[ $g_os_msys == 1 ]]; then
+    ps_extra="${ps_magenta}MSYS${ps_end} "
+  fi
+
+  # a nice, simple prompt.
+  #
+  # $$  -> process id of this shell
+  # \t  -> current time in HH:MM:SS
+  # \w  -> current working directory
+  #
   # use '\t' instead of $(date ...) (does the same, but it's also a builtin!)
-  PS1="\[[${ps_blue}$$ / \t${ps_end}]\] ${ps_yellow}\w${ps_end}\n\$ "
+  PS1="\[[${ps_blue}$$ / \t${ps_end}]\] ${ps_extra}${ps_yellow}\w${ps_end}\n\$ "
+
+  # no clutter plz
+  unset ps_red ps_green ps_yellow ps_blue ps_magenta ps_cyan
+  unset ps_end ps_extra
 fi
+unset force_color_prompt color_prompt
 
 # alias definitions
 bash_aliases_file="$HOME/.aliasrc"
@@ -292,6 +345,12 @@ if [[ -f "$bash_aliases_file" ]]; then
   __bashrc_debugmsg "including aliases file <$bash_aliases_file>"
   source "$bash_aliases_file"
 fi
+unset bash_aliases_file
+
+####################
+### autocomplete ###
+####################
+complete -d cd
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -319,14 +378,15 @@ if [[ "$g_cfg_loadcompletion" == "1" ]]; then
 fi
 
 # this obviously doesn't make sense on anything other than windows
-if [[ "$g_operatingsystem" == "cygwin" ]]; then
+if [[ "$g_operatingsystem" =~ (cygwin|msys*) ]]; then
   # visual studio environment variables
-  visualstudio_envfile="$HOME/.visualstudio.env"
-  if [[ -f "$visualstudio_envfile" ]]; then
-    __bashrc_debugmsg "including visual studio environment variables file <$visualstudio_envfile>"
-    source "$visualstudio_envfile"
+  visualstudio_placeholderfile="$HOME/dev/vscyg/placeholder.sh"
+  if [[ -f "$visualstudio_placeholderfile" ]]; then
+    source "$visualstudio_placeholderfile"
   fi
+  unset visualstudio_placeholderfile
 fi
 
-unset __bashrc_debugmsg g_cfg_debug g_cfg_loadcompletion
+source "$HOME/.goenv"
 
+unset __bashrc_debugmsg g_cfg_debug g_cfg_loadcompletion

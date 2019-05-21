@@ -6,7 +6,11 @@ require "objspace"
 require "benchmark"
 require "json"
 require "win32ole"
-require File.join(ENV["HOME"], "/dev/gems/clipboard/lib/clipboard")
+require "uri"
+require "cgi"
+require "base64"
+require File.join(ENV["HOME"], "/dev/gems/lib/clipboard")
+require File.join(ENV["HOME"], "dev/gems/lib/repr")
 
 # don't need the pager tbh
 Pry.config.pager = false
@@ -32,10 +36,56 @@ Pry.prompt = [
   }
 ]
 
-###################
-## global vars ####
-###################
+#################################
+## global vars and functions ####
+#################################
 $clip = $clipboard = Clipboard::Unix.new
+
+module Tools
+  def self.verbose_require(mod)
+    $stderr.printf("requiring %p ...\n", mod)
+    Kernel.require(mod)
+  end
+end
+
+# allows "piping" to some sort of I/O receiver
+class Object
+  def _write_to(dest)
+    rt = 0
+    if dest.is_a?(IO) || dest.respond_to?(:write) then
+      rt = dest.write(self.to_s)
+    else
+      # lets you do stuff like:
+      #
+      #   somefunc("blah") | :somefunc [| ...]
+      #
+      # where the symbol corresponds to a function taking a single argument
+      # 
+      if dest.is_a?(Symbol) then
+        begin
+          mt = Kernel.method(dest)
+          return mt.call(self)
+        rescue => ex
+          raise NoMethodError, sprintf("Object#_write_to: no method named %p", dest)
+        end
+      end
+      raise ArgumentError, sprintf("Object#_write_to: destination class %p is not IO, and does not respond to #write", dest.class)
+    end
+    return rt
+  end
+end
+
+class String
+  def |(dest)
+    self._write_to(dest)
+  end
+
+  def base64
+    return Base64.encode64(self).strip
+  end
+
+  alias_method(:b64, :base64)
+end
 
 ###################
 ## awesome_print ##
@@ -56,13 +106,18 @@ AwesomePrint.pry!
 ##################
 
 
-require "linguistics"
-
 class Numeric
   # print the word of a number.
   # i.e., 1000 => "one thousand", etc
-  def name
-    return self.en.numwords
+  def to_words(lang="en")
+    require "linguistics" unless defined?(Linguistics)
+    enlang = Linguistics.load_language(lang)
+    words = enlang::Numbers.number_to_standard_word_groups(self.to_i)
+    return words
+  end
+
+  def to_name(j=" ")
+    return to_words.join(j)
   end
 end
 
@@ -80,12 +135,14 @@ class Object
 
   # sends whatever to the clipboard
   def to_clipboard
-    stringified = self.pretty_inspect.strip
+    #prettified = self.pretty_inspect.strip
+    prettified = self.to_s
+    stringified = self.to_s
     printable = (
-      if stringified.length > 80 then
-        stringified.slice(0, 80) + '...'
+      if prettified.length > 80 then
+        prettified.slice(0, 80) + '...'
       else
-        stringified
+        prettified
       end
     ).inspect
     $clipboard.write(stringified)
@@ -108,19 +165,6 @@ console = Module.new do |mod|
   def mod.olenew(progid)
     return WIN32OLE.new(progid)
   end
-
-  # login to reddit using environment variables.
-  # probably not very useful for most users.
-  def mod.reddit_login
-    return Redd.it(
-      client_id: ENV["REDDPICS_APPID"],
-      secret: ENV["REDDPICS_APIKEY"],
-      username: ENV["REDDPICS_USERNAME"],
-      password: ENV["REDDPICS_PASSWORD"],
-      user_agent: "ImageDownloader (ver1.0)"
-    )
-  end
-
 
   # retrieve path(s) of a module.
   # if a module is, for some reason, installed/available in more than
@@ -155,33 +199,12 @@ console = Module.new do |mod|
     end
   end
 
-  # dumps all global objects to $path.
-  # warning: will create a ***VERY*** large file!
-  def mod.dump_global_objects_to_file(path)
-    count = 0
-    begin
-      File.open(path, "w") do |fh|
-        ObjectSpace.each_object do |o|
-          begin
-            fh << o.to_s.dump
-            count += 1
-          rescue => err
-            $stderr.puts("dump_global_objects_to_file: #{err.class}: #{err.message}")
-          end
-        end
-      end
-    rescue => err
-      $stderr.puts("failed to write to #{path.dump}: #{err}")
-    ensure
-      $stderr.puts("wrote #{count} object(s) to #{path.dump}")
-    end
-  end
-
   # retrieve all methods of a class.
   # if $source is true, include source code string (if available)
   def mod.allmethods(klass, source: false)
     ret = {}
     funcs = %i(method instance_method)
+    klass = klass.class if !klass.is_a?(Class)
     funcs.each do |func|
       # turns, for example, "instance_method" into :instance_methods
       getterfunc = (func.to_s + "s").to_sym
@@ -226,3 +249,18 @@ console = Module.new do |mod|
     return srcmethods(klass, source: source)[name]
   end
 end
+
+### custom commands ###
+=begin
+custom_command_set = Pry::CommandSet.new do
+  command("copy", "Copy argument to the clip-board") do |str|
+    IO.popen('pbcopy', 'w') do |f|
+      f << str.to_s
+    end
+  end
+end
+
+Pry.config.commands.import(custom_command_set)
+=end
+
+
