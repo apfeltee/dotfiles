@@ -1,0 +1,7 @@
+
+# config file for cleanenv
+# add any paths you don't want in $PATH below
+# (must be prefixed with "-", since this is a yaml file!)
+
+- "c:/cloud/local/dev/"
+- "c:/cloud/local/dev/clangfix/bin/"

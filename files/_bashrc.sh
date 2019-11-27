@@ -1,10 +1,11 @@
 
 ##
 # this silly "hack" is need to get cygwin to launch in sandboxie.
-# for some r
 # the PATH is later cleaned up anyway.
 ## 
 export PATH="/bin:/usr/bin:$PATH"
+# cygwin doesn't use /etc/passwd by default, so let's, uh, work around that.
+# it's not stupid if it works!
 exec zsh
 
 ##################################################################

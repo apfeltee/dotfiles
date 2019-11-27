@@ -1,7 +1,46 @@
+
+##############################
+## generic/unsorted options ##
+##############################
+#ColumnLimit: 520
+ColumnLimit: 100
 AccessModifierOffset: 0
 AlignEscapedNewlinesLeft: true
+Standard: Auto
+TabWidth: 4
+UseTab: Never
+IndentWidth: 4
+MaxEmptyLinesToKeep: 1
+
+
+##############
+## pointers ##
+##############
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignConsecutiveDeclarations: false
+DerivePointerBinding: false
+
+###############
+## comments ##
+##############
 AlignTrailingComments: false
-ReflowComments: false
+ReflowComments: true
+CommentPragmas: ''
+PenaltyBreakComment: 100
+FixNamespaceComments: true
+
+##################
+## preprocessor ##
+##################
+# this breaks source code. why is this shit enabled by default?
+SortIncludes:  false
+IndentPPDirectives: BeforeHash
+
+####################################
+## other options (todo: sort me!) ##
+####################################
+#AccessModifierIndentation: true
 #AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
@@ -13,22 +52,22 @@ BreakBeforeBinaryOperators: true
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: false
 BreakConstructorInitializersBeforeComma: false
-#ColumnLimit: 100
-CommentPragmas: ''
+
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 0
 Cpp11BracedListStyle: false
-DerivePointerBinding: false
+
 IndentCaseLabels: true
 IndentFunctionDeclarationAfterType: false
-IndentWidth: 4
-MaxEmptyLinesToKeep: 2
+
+KeepEmptyLinesAtTheStartOfBlocks: true
+
 NamespaceIndentation: All
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: true
 #PenaltyBreakBeforeFirstCallParameter: 100
-PenaltyBreakComment: 100
+
 PenaltyBreakFirstLessLess: 0
 PenaltyBreakString: 100
 PenaltyExcessCharacter: 1
@@ -41,6 +80,4 @@ SpacesInAngles: false
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
-Standard: Auto
-TabWidth: 4
-UseTab: Never
+

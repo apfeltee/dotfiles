@@ -20,6 +20,7 @@ function digga()
 }
 
 # some pretty common cd aliases
+alias l=ls
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
@@ -32,8 +33,17 @@ alias -- -="cd -"
 alias cd..='cd ..'
 
 # lllaaazzzyyyy
+alias h='head'
+alias f='file'
+alias md='mkdir'
 alias agdb='autogdb'
-alias v='less -f -F'
+
+#if type most >/dev/null ; then
+#  alias v='most -u -v'
+#else
+  alias v='less -f -F'
+#fi
+
 alias cf='countfiles'
 # fixing stupidity. fucking yay.
 alias tree='tree -C -a -h'

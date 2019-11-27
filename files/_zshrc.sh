@@ -7,6 +7,10 @@
 ## printf "<%s>\n" "${ofiles[@]/.o/.c}"
 ##++
 
+if [[ -z "$ZSH_VERSION" ]]; then
+  echo "this file can only work under zsh!"
+  return 1
+fi
 
 # needed mostly for .aliasrc
 export SHELL_IS_ZSH=1
@@ -25,7 +29,7 @@ compinit
 promptinit
 
 # disable completions for some custom commands
-compdef -d new open sh
+compdef -d new open sh mpc man
 
 #autoload -Uz quote-and-complete-word
 #zle -N quote-and-complete-word
@@ -74,6 +78,9 @@ setopt autopushd
 # stack
 setopt pushdignoredups
 
+# default is 100. it's annoying
+export LISTMAX=500
+
 # autoquote pasted URLs
 #autoload -Uz url-quote-magic
 #zle -N self-insert url-quote-magic
@@ -88,6 +95,8 @@ zstyle '*' single-ignored complete
 zstyle ':completion:*' special-dirs true
 zstyle ':completion:*' list-colors ''
 
+# afaik this is the closest to emulate windows-style sorting
+zstyle ':completion:*' file-sort name
 
 # This tells zsh that small letters will match small and capital letters.
 # (i.e. capital letters match only capital letters.)
@@ -101,6 +110,44 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 # make autocomplete case-insensitive (mostly for cygwin)
 #zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 
+# debugging utilities
+function zsh-dump-keybinds
+{
+  # all key bindings:
+  for m ($keymaps) bindkey -LM $m
+}
+
+function zsh-dump-widgets
+{
+  # all ZLE user widgets
+  zle -lL
+}
+
+function zsh-dump-zstyles
+{
+  # all zstyles:
+  zstyle -L
+}
+
+function zsh-dump-modules
+{
+  # loaded modules:
+  zmodload -L
+}
+
+function zsh-dump-variables
+{
+  # all variables:
+  typeset -p +H -m '*'
+}
+
+function zsh-dump-options
+{
+  # print all options
+  print -aC2 ${(kv)options}
+}
+
+
 # set up os-specific stuff
 g_operatingsystem="$(uname -o | perl -pe '$_=lc($_); s#gnu/##gi')"
 if [[ "$g_operatingsystem" == "cygwin" ]]; then
@@ -109,8 +156,8 @@ if [[ "$g_operatingsystem" == "cygwin" ]]; then
   export DISPLAY=:0.0
   # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
   # to include native support for symbolic links
-  #export CYGWIN="winsymlinks:nativestrict wincmdln"
-  export CYGWIN="winsymlinks wincmdln"
+  export CYGWIN="winsymlinks:nativestrict wincmdln"
+  #export CYGWIN="winsymlinks wincmdln"
 elif [[ "$g_operatingsystem" =~ msys* ]]; then
   g_os_msys=1
   g_os_cdirpre="/c"
@@ -133,8 +180,8 @@ if [[ "$g_operatingsystem" =~ (cygwin|msys*) ]]; then
   # needed for a variety of java programs
   # but these are typically set by Linux very differently, so
   # this is only for cygwin, obviously
-  export JAVA_HOME="C:/progra~1/Java/jdk/"
-  export JRE_HOME="C:/progra~1/Java/jre/"
+  #export JAVA_HOME="C:/progra~1/Java/jdk/"
+  #export JRE_HOME="C:/progra~1/Java/jre/"
 fi
 
 ###############################
@@ -184,6 +231,8 @@ userpath=(
   "$HOME/bin"
   "$HOME/.local/bin"
 
+  # this needs to be merged at some point
+  "${g_os_cdirpre}/cloud/local/dev/home-paths/bin"
 
   # contains symlinks for windows commands
   "${g_os_cdirpre}/cloud/local/dev/winbin/bin"
@@ -194,30 +243,40 @@ userpath=(
   # programs that technically exist for UNIX-ish oses, but are a
   # royal pain in the ass to build on cygwin
   "${g_os_cdirpre}/progra~1/DockerTB"
-  "${g_os_cdirpre}/Users/${USER}/.cargo/bin"
+  #"${g_os_cdirpre}/Users/${USER}/.cargo/bin"
+  "${g_os_cdirpre}/Users/${USER}/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin"
   "${g_os_cdirpre}/scripting/nodejs/"
   "${g_os_cdirpre}/Users/${USER}/AppData/Roaming/npm"
+  #"${g_os_cdirpre}/cloud/gdrive/portable/systemtools/otvdm"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/other"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/re2c/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/go/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/freebasic"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/fpc/bin/i386-win32"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/nasm"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/borlandcpp/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/ikvm/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/video/mkvtoolnix/"
+  "${g_os_cdirpre}/cloud/gdrive/portable/android/bin"
+
+  # fpc, lazarus, et al
+  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/lazarus/fpc/3.0.4/bin/x86_64-win64"
+
 
 
   # distinctly windows-specific paths
   # (either don't exist for *nix, or integrate very poorly with cygwin)
-  "${g_os_cdirpre}/progra~2/WABT/bin/"
-  "${g_os_cdirpre}/progra~2/binaryen/bin/"
-  "${g_os_cdirpre}/progra~1/Java/jre/bin/"
-  "${g_os_cdirpre}/progra~1/Java/jdk/bin/"
+  "${g_os_cdirpre}/Users/${USER}/.dotnet/tools/"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/apache-ant/bin"
   #"${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/dmd/dmd2/windows/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/ldc/bin"
   "${g_os_cdirpre}/cloud/gdrive/portable/unsorted"
+  "${g_os_cdirpre}/go/bin"
+  "${g_os_cdirpre}/cheerp/pathbin"
+  "${g_os_cdirpre}/progra~2/WABT/bin/"
+  "${g_os_cdirpre}/progra~2/binaryen/bin/"
+  "${g_os_cdirpre}/progra~1/Java/jre/bin/"
+  "${g_os_cdirpre}/progra~1/Java/jdk/bin/"
+
   #"${g_os_cdirpre}/ProgramData/Chocolatey/bin"
   "${g_os_cdirpre}/Progra~1/qemu"
   "${g_os_cdirpre}/tools/dart-sdk/bin"
@@ -228,7 +287,8 @@ userpath=(
   #"${g_os_cdirpre}/Windows/System32/WindowsPowerShell/v1.0"
 )
 
-if ! type ruby >/dev/null; then
+# don't use ruby on termux!
+if ! type ruby >/dev/null || [[ "$HOME" =~ /.*termux.*/ ]]; then
   #export PATH="$(__strjoin ':' "${userpath[@]}")"
   tmp=""
   for item in "${userpath[@]}"; do
@@ -282,7 +342,7 @@ unset userpath
 if type docker >/dev/null; then
   #DOCKER_HOST=tcp://192.168.99.100:2376
   #export DOCKER_MACHINE_NAME=default
-  export DOCKER_CERT_PATH="C:/Users/sebastian/.docker/machine/machines/default"
+  export DOCKER_CERT_PATH="C:/Users/${USER}/.docker/machine/machines/default"
   #export DOCKER_HOST="tcp://192.168.99.100:2376"
   export DOCKER_MACHINE_NAME="default"
   export DOCKER_TLS_VERIFY="1"

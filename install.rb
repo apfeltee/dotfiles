@@ -3,42 +3,62 @@
 require "pp"
 require "optparse"
 
+# regex to match file extension(s) for some files
+FEXTPATTERN = /\.(sh|rb|pl|ya?ml|cfg|txt)$/
+
 def msg(fmt, *a, **kw)
   str = (if (a.empty? && kw.empty?) then fmt else sprintf(fmt, *a, **kw) end)
   $stderr.printf("%s\n", str)
 end
 
 def inst(filepath, destpath, aslink, force)
-    # make sure we're not accidently unlinking an existing rcfile
-    if File.symlink?(destpath) then
-      msg("path %p is a symlink, will be overwritten", destpath)
-      File.unlink(destpath)
-    elsif File.file?(destpath) then
-      msg("destination %p already exists, but it's not a symlink!", destpath)
-      if force then
-        msg("deleting %p ...", destpath)
-        File.delete(destpath)
-      else
-        msg("refusing to continue -- fix this first before running this script again")
-        exit(1)
+  #msg("filepath=%p, destpath=%p", filepath, destpath); return
+  # make sure we're not accidently unlinking an existing rcfile
+  if File.symlink?(destpath) then
+    msg("path %p is a symlink, will be overwritten", destpath)
+    File.unlink(destpath)
+  elsif File.file?(destpath) then
+    msg("destination %p already exists, but it's not a symlink!", destpath)
+    if force then
+      msg("deleting %p ...", destpath)
+      File.delete(destpath)
+    else
+      msg("refusing to continue -- fix this first before running this script again")
+      exit(1)
+    end
+  end
+  if aslink then
+    # then, just symlink it
+    msg("symlink(%p, %p)", filepath, destpath)
+    File.symlink(filepath, destpath)
+  else
+    msg("copy(%p, %p)", filepath, destpath)
+    File.write(destpath, File.read(filepath))
+  end
+end
+
+#glob_and_build("keep-ext/_*", false) do |fpath, destpath|
+
+def glob_and_build(glpat, keepext, &b)
+  homedir = ENV["HOME"]
+  Dir.glob(File.join(__dir__, glpat)) do |path|
+    fpath = File.absolute_path(path)
+    basename = File.basename(fpath)
+    # replace underscore with a dot
+    destname = basename.gsub(/(^_)/, ".")
+    # remove file extension from some files
+    if not keepext then
+      if (m = destname.match(FEXTPATTERN)) != nil then
+        destname = destname.gsub(FEXTPATTERN, "")
       end
     end
-    if aslink then
-      # then, just symlink it
-      msg("symlink(%p, %p)", filepath, destpath)
-      File.symlink(filepath, destpath)
-    else
-      msg("copy(%p, %p)", filepath, destpath)
-      File.write(destpath, File.read(filepath))
-    end
+    # make absolute path for the destination
+    destpath = File.join(homedir, destname)
+    b.call(fpath, destpath)
+  end
 end
 
 begin
-  # self explanatory
-  homedir = ENV["HOME"]
-
-  # regex to match file extension(s) for some files
-  fextpattern = /\.(sh|rb|pl|ya?ml|cfg|txt)$/
   force = false
   aslink = true
   OptionParser.new{|prs|
@@ -49,16 +69,10 @@ begin
       force = true
     }
   }.parse!
-  Dir.glob(File.join(__dir__, "files/_*")).each do |filepath|
-    basename = File.basename(filepath)
-    # replace underscore with a dot
-    destname = basename.gsub(/(^_)/, ".")
-    # remove file extension from some files
-    if m = destname.match(fextpattern) then
-      destname = destname.gsub(fextpattern, "")
-    end
-    # make absolute path for the destination
-    destpath = File.join(homedir, destname)
-    inst(filepath, destpath, aslink, force)
+  glob_and_build("files/_*", false) do |fpath, destpath|
+    inst(fpath, destpath, aslink, force)
+  end
+  glob_and_build("keep-ext/_*", true) do |fpath, destpath|
+    inst(fpath, destpath, aslink, force)
   end
 end

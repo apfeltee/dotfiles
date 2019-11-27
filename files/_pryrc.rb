@@ -1,5 +1,7 @@
 # -*- ruby -*-
 
+$VERBOSE = true
+
 require "pp"
 require "ostruct"
 require "objspace"
