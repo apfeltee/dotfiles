@@ -1,15 +1,14 @@
 #!/bin/zsh
 
-##++
-## substitutes .o with .c on an array of strings. fasntnig.
-##++
-## ofiles=(*.o)
-## printf "<%s>\n" "${ofiles[@]/.o/.c}"
-##++
-
 if [[ -z "$ZSH_VERSION" ]]; then
   echo "this file can only work under zsh!"
   return 1
+fi
+
+# if zsh is invoked via 'exec -c' (i.e., clear environment), then
+# $TERM is not set. this fixes it.
+if [[ -z "$TERM" ]]; then
+  export TERM="cygwin"
 fi
 
 # needed mostly for .aliasrc
@@ -29,7 +28,7 @@ compinit
 promptinit
 
 # disable completions for some custom commands
-compdef -d new open sh mpc man
+compdef -d new open sh mpc man jq
 
 #autoload -Uz quote-and-complete-word
 #zle -N quote-and-complete-word
@@ -77,6 +76,8 @@ setopt autopushd
 # Don't push multiple copies of the same directory onto the directory
 # stack
 setopt pushdignoredups
+# i'd like to keep it, thanks
+setopt no_auto_remove_slash
 
 # default is 100. it's annoying
 export LISTMAX=500
@@ -86,8 +87,8 @@ export LISTMAX=500
 #zle -N self-insert url-quote-magic
 
 # makes end (ende) / home (POS1) keys work
-bindkey "${terminfo[khome]}" beginning-of-line
-bindkey "${terminfo[kend]}" end-of-line
+#bindkey "${terminfo[khome]}" beginning-of-line || true
+#bindkey "${terminfo[kend]}" end-of-line || true
 
 #zstyle '*' single-ignored show
 zstyle '*' single-ignored complete
@@ -152,7 +153,7 @@ function zsh-dump-options
 g_operatingsystem="$(uname -o | perl -pe '$_=lc($_); s#gnu/##gi')"
 if [[ "$g_operatingsystem" == "cygwin" ]]; then
   g_os_cygwin=1
-  g_os_cdirpre="/cygdrive/c"
+  g_os_pathprefix="/cygdrive/c"
   export DISPLAY=:0.0
   # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
   # to include native support for symbolic links
@@ -160,7 +161,7 @@ if [[ "$g_operatingsystem" == "cygwin" ]]; then
   #export CYGWIN="winsymlinks wincmdln"
 elif [[ "$g_operatingsystem" =~ msys* ]]; then
   g_os_msys=1
-  g_os_cdirpre="/c"
+  g_os_pathprefix="/c"
 fi
 
 #####################################
@@ -188,7 +189,7 @@ fi
 #### C/C++ Include Paths ######
 ###############################
 cppincludepaths=(
-  "${g_os_cdirpre}/cloud/local/sharedcode/include"
+  "${g_os_pathprefix}/cloud/local/sharedcode/include"
 )
 export CPATH="$(IFS=":"; echo "${cppincludepaths[*]}")"
 export CPLUS_INCLUDE_PATH="$CPATH"
@@ -232,75 +233,84 @@ userpath=(
   "$HOME/.local/bin"
 
   # this needs to be merged at some point
-  "${g_os_cdirpre}/cloud/local/dev/home-paths/bin"
+  "${g_os_pathprefix}/cloud/local/dev/home-paths/bin"
 
   # contains symlinks for windows commands
-  "${g_os_cdirpre}/cloud/local/dev/winbin/bin"
+  "${g_os_pathprefix}/cloud/local/dev/winbin/bin"
 
   # symlinks to prod-rel clang-fix are generated there
-  "${g_os_cdirpre}/cloud/local/dev/clangfix/bin"
+  "${g_os_pathprefix}/cloud/local/dev/clangfix/bin"
+
+  # rakudo auto-installs to c:/rakudo ... :-(
+  "${g_os_pathprefix}/rakudo/bin"
+  "${g_os_pathprefix}/rakudo/share/perl6/site/bin"
 
   # programs that technically exist for UNIX-ish oses, but are a
   # royal pain in the ass to build on cygwin
-  "${g_os_cdirpre}/progra~1/DockerTB"
-  #"${g_os_cdirpre}/Users/${USER}/.cargo/bin"
-  "${g_os_cdirpre}/Users/${USER}/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin"
-  "${g_os_cdirpre}/scripting/nodejs/"
-  "${g_os_cdirpre}/Users/${USER}/AppData/Roaming/npm"
-  #"${g_os_cdirpre}/cloud/gdrive/portable/systemtools/otvdm"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/other"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/re2c/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/go/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/freebasic"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/nasm"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/borlandcpp/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/ikvm/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/video/mkvtoolnix/"
-  "${g_os_cdirpre}/cloud/gdrive/portable/android/bin"
+  "${g_os_pathprefix}/progra~1/DockerTB"
+  "${g_os_pathprefix}/Users/${USER}/.cargo/bin"
+  "${g_os_pathprefix}/Users/${USER}/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/bin"
+  "${g_os_pathprefix}/scripting/nodejs/"
+  "${g_os_pathprefix}/scripting/zig/"
+  "${g_os_pathprefix}/Users/${USER}/AppData/Roaming/npm"
+  "${g_os_pathprefix}/Users/sebastian/go/bin/"
+  #"${g_os_pathprefix}/cloud/gdrive/portable/systemtools/otvdm"
+  "${g_os_pathprefix}/cloud/gdrive/portable/ipfs/"  
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/other"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/re2c/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/go/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/freebasic"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/nasm"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/borlandcpp/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/ikvm/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/video/mkvtoolnix/"
+  "${g_os_pathprefix}/cloud/gdrive/portable/android/bin"
 
   # fpc, lazarus, et al
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/lazarus/fpc/3.0.4/bin/x86_64-win64"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/lazarus/fpc/3.0.4/bin/x86_64-win64"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/pas2js/bin"
 
 
 
   # distinctly windows-specific paths
   # (either don't exist for *nix, or integrate very poorly with cygwin)
-  "${g_os_cdirpre}/Users/${USER}/.dotnet/tools/"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/apache-ant/bin"
-  #"${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/dmd/dmd2/windows/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/devtools/dlang/ldc/bin"
-  "${g_os_cdirpre}/cloud/gdrive/portable/unsorted"
-  "${g_os_cdirpre}/go/bin"
-  "${g_os_cdirpre}/cheerp/pathbin"
-  "${g_os_cdirpre}/progra~2/WABT/bin/"
-  "${g_os_cdirpre}/progra~2/binaryen/bin/"
-  "${g_os_cdirpre}/progra~1/Java/jre/bin/"
-  "${g_os_cdirpre}/progra~1/Java/jdk/bin/"
+  "${g_os_pathprefix}/Users/${USER}/.dotnet/tools/"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/apache-ant/bin"
+  #"${g_os_pathprefix}/cloud/gdrive/portable/devtools/dlang/dmd/dmd2/windows/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/devtools/dlang/ldc/bin"
+  "${g_os_pathprefix}/cloud/gdrive/portable/unsorted"
+  "${g_os_pathprefix}/go/bin"
+  "${g_os_pathprefix}/cheerp/pathbin"
+  "${g_os_pathprefix}/progra~2/WABT/bin/"
+  "${g_os_pathprefix}/progra~2/binaryen/bin/"
+  "${g_os_pathprefix}/progra~1/Java/jre/bin/"
+  "${g_os_pathprefix}/progra~1/Java/jdk/bin/"
 
-  #"${g_os_cdirpre}/ProgramData/Chocolatey/bin"
-  "${g_os_cdirpre}/Progra~1/qemu"
-  "${g_os_cdirpre}/tools/dart-sdk/bin"
-  #"${g_os_cdirpre}/Progra~1/dotnet"
-  #"${g_os_cdirpre}/users/$USER/.dotnet/x64"
-  #"${g_os_cdirpre}/Windows"
-  #"${g_os_cdirpre}/Windows/system32"
-  #"${g_os_cdirpre}/Windows/System32/WindowsPowerShell/v1.0"
+  #"${g_os_pathprefix}/ProgramData/Chocolatey/bin"
+  "${g_os_pathprefix}/Progra~1/qemu"
+  "${g_os_pathprefix}/tools/dart-sdk/bin"
+  #"${g_os_pathprefix}/Progra~1/dotnet"
+  #"${g_os_pathprefix}/users/$USER/.dotnet/x64"
+  #"${g_os_pathprefix}/Windows"
+  #"${g_os_pathprefix}/Windows/system32"
+  #"${g_os_pathprefix}/Windows/System32/WindowsPowerShell/v1.0"
 )
 
 # don't use ruby on termux!
 if ! type ruby >/dev/null || [[ "$HOME" =~ /.*termux.*/ ]]; then
   #export PATH="$(__strjoin ':' "${userpath[@]}")"
-  tmp=""
+  tmppathval=""
   for item in "${userpath[@]}"; do
     if [[ -d "$item" ]]; then
-      if [[ "$tmp" == "" ]]; then
-        tmp="$item"
+      if [[ "$tmppathval" == "" ]]; then
+        tmppathval="$item"
       else
-        tmp="$item:$tmp"
+        tmppathval="$item:$tmppathval"
       fi
     fi
   done
-  export PATH="$tmp"
+  export PATH="$tmppathval"
+  unset tmppathval
 else
   # if ruby exists, then use a more sophisticated way of removing duplicates
   # and non-existant dirs from $PATH
@@ -361,7 +371,6 @@ if true; then
   #export PS1="[${ps_blue}$$ / %*${ps_end}] ${ps_yellow}%~${ps_end}${ps_newline}\$ "
   #unset ps_red ps_blue ps_yellow ps_end ps_newline
   #export PS1='%B%F{red}co%F{green}lo%F{blue}rs%f%b'
-  
   datefmt="%D{%A[%d]/%h/%y | %H:%M:%S}"
   export PS1="[%F{blue}%M%f / %F{blue}$datefmt%f] %F{yellow}%~%f${ps_newline}%# "
 fi

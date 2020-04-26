@@ -6,7 +6,7 @@
 export PATH="/bin:/usr/bin:$PATH"
 # cygwin doesn't use /etc/passwd by default, so let's, uh, work around that.
 # it's not stupid if it works!
-exec zsh
+#exec zsh
 
 ##################################################################
 ## none of this below is reached if "exec zsh" is uncommented!! ##

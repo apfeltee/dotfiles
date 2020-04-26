@@ -3,14 +3,19 @@
 ## generic/unsorted options ##
 ##############################
 #ColumnLimit: 520
-ColumnLimit: 100
-AccessModifierOffset: 0
+ColumnLimit: 120
+AccessModifierOffset: -4
 AlignEscapedNewlinesLeft: true
 Standard: Auto
 TabWidth: 4
 UseTab: Never
 IndentWidth: 4
-MaxEmptyLinesToKeep: 1
+#MaxEmptyLinesToKeep: 1
+
+##################
+## declarations ##
+##################
+AlignConsecutiveDeclarations: false
 
 
 ##############
@@ -18,7 +23,6 @@ MaxEmptyLinesToKeep: 1
 ##############
 DerivePointerAlignment: false
 PointerAlignment: Left
-AlignConsecutiveDeclarations: false
 DerivePointerBinding: false
 
 ###############
@@ -61,7 +65,7 @@ Cpp11BracedListStyle: false
 IndentCaseLabels: true
 IndentFunctionDeclarationAfterType: false
 
-KeepEmptyLinesAtTheStartOfBlocks: true
+KeepEmptyLinesAtTheStartOfBlocks: false
 
 NamespaceIndentation: All
 ObjCSpaceAfterProperty: true

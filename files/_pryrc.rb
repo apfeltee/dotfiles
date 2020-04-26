@@ -16,11 +16,18 @@ require File.join(ENV["HOME"], "dev/gems/lib/repr")
 
 # don't need the pager tbh
 Pry.config.pager = false
-Pry.config.color = false
+Pry.config.color = true
 # auto_indent messes up conemu for some reason
 Pry.config.auto_indent = false
 
 
+#Pry.config.prompt = [
+#  proc { "input> " },
+#  proc { "     | " }
+#]
+
+
+=begin
 Pry.prompt = [
   proc { |target_self, nest_level, pry|
     inpsize = pry.input_array.size
@@ -37,6 +44,7 @@ Pry.prompt = [
     "[#{inpsize}]\001\e[1;32m\002#{prname}\001\e[0m\002(\001\e[1;33m\002#{vwclip}\001\e[0m\002)#{nesting}* "
   }
 ]
+=end
 
 #################################
 ## global vars and functions ####
@@ -52,6 +60,26 @@ end
 
 # allows "piping" to some sort of I/O receiver
 class Object
+
+  def _eachdo(method, cacheinit, mtargs, parentblock, dosplat, &b)
+    cache = cacheinit.dup
+    mtargs.each do |arg|
+      rt = (
+        if dosplat then
+          self.send(method, *arg)
+        else
+          self.send(method, arg)
+        end
+      )
+      if cache.is_a?(Hash) then
+        cache[arg] = rt
+      else
+        cache.push(rt)
+      end
+    end
+    return cache
+  end
+
   def _write_to(dest)
     rt = 0
     if dest.is_a?(IO) || dest.respond_to?(:write) then
@@ -84,6 +112,20 @@ class String
 
   def base64
     return Base64.encode64(self).strip
+  end
+
+  def xor(n)
+    tmp = []
+    self.each_byte do |b|
+      tmp.push((b ^ n).chr)
+    end
+    return tmp.join
+  end
+
+
+
+  def exor(*vals, &b)
+    return self._eachdo(:xor, {}, vals, b, false)
   end
 
   alias_method(:b64, :base64)
