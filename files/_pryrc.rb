@@ -20,13 +20,8 @@ Pry.config.color = true
 # auto_indent messes up conemu for some reason
 Pry.config.auto_indent = false
 
-
-#Pry.config.prompt = [
-#  proc { "input> " },
-#  proc { "     | " }
-#]
-
-
+### this no longer works. was deprecated for a while,
+### but latest release borked it for good
 =begin
 Pry.prompt = [
   proc { |target_self, nest_level, pry|

@@ -15,6 +15,8 @@ IndentWidth: 4
 ##################
 ## declarations ##
 ##################
+# this doesn't actually work with access modifiers ...
+# no fix in sight yet
 AlignConsecutiveDeclarations: false
 
 
@@ -37,14 +39,14 @@ FixNamespaceComments: true
 ##################
 ## preprocessor ##
 ##################
-# this breaks source code. why is this shit enabled by default?
+# sorting #includes breaks all sorts of things...
 SortIncludes:  false
 IndentPPDirectives: BeforeHash
 
 ####################################
 ## other options (todo: sort me!) ##
 ####################################
-#AccessModifierIndentation: true
+AccessModifierIndentation: true
 #AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false

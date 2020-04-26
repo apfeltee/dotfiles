@@ -1,0 +1,36 @@
+
+# Top level variables:
+# auto-confirm                 -- If true all confirmation prompts will receive their default reply.
+# auto-indent                  -- If true, LLDB will auto indent/outdent code. Currently only supported in the REPL (default: true).
+# auto-one-line-summaries      -- If true, LLDB will automatically display small structs in one-liner format (default: true).
+# disassembly-format           -- The default disassembly format string to use when disassembling instruction sequences.
+# escape-non-printables        -- If true, LLDB will automatically escape non-printable and escape characters when formatting strings.
+# frame-format                 -- The default frame format string to use when displaying stack frame information for threads.
+# frame-format-unique          -- The default frame format string to use when displaying stack frameinformation for threads from thread backtrace unique.
+# highlight-source             -- If true, LLDB will highlight the displayed source code.
+# notify-void                  -- Notify the user explicitly if an expression returns void (default: false).
+# print-decls                  -- If true, LLDB will print the values of variables declared in an expression. Currently only supported in the REPL (default: true).
+# prompt                       -- The debugger command line prompt displayed for the user.
+# script-lang                  -- The script language to be used for evaluating user-written scripts.
+# stop-disassembly-count       -- The number of disassembly lines to show when displaying a stopped context.
+# stop-disassembly-display     -- Control when to display disassembly when displaying a stopped context.
+# stop-line-count-after        -- The number of sources lines to display that come after the current source line when displaying a stopped context.
+# stop-line-count-before       -- The number of sources lines to display that come before the current source line when displaying a stopped context.
+# stop-show-column             -- If true, LLDB will use the column information from the debug info to mark the current position when displaying a stopped context.
+# stop-show-column-ansi-prefix -- When displaying the column marker in a color-enabled (i.e. ANSI) terminal, use the ANSI terminal code specified in this format at the
+                                # immediately before the column to be marked.
+# stop-show-column-ansi-suffix -- When displaying the column marker in a color-enabled (i.e. ANSI) terminal, use the ANSI terminal code specified in this format
+                                # immediately after the column to be marked.
+# tab-size                     -- The tab size to use when indenting code in multi-line input mode (default: 4).
+# term-width                   -- The maximum number of columns to use for displaying text.
+# thread-format                -- The default thread format string to use when displaying thread information.
+# thread-stop-format           -- The default thread format  string to use when displaying thread information as part of the stop display.
+# use-color                    -- Whether to use Ansi color codes or not.
+# use-external-editor          -- Whether to use an external editor or not.
+
+## colors in lldb are broken in conemu, and i don't know why
+settings set use-color false
+
+## "are you sure you want to quit?"
+settings set auto-confirm true
+
