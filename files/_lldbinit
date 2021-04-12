@@ -33,4 +33,4 @@ settings set use-color false
 
 ## "are you sure you want to quit?"
 settings set auto-confirm true
-
+#settings set target.disable-stdio

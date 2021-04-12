@@ -1,0 +1,15 @@
+NODE_JS = 'C:/cloud/local/code/programs/emsdk/node/12.9.1_64bit/bin/node.exe'
+PYTHON = 'C:/cloud/local/code/programs/emsdk/python/3.7.4_64bit/python.exe'
+JAVA = 'C:/cloud/local/code/programs/emsdk/java/8.152_64bit/bin/java.exe'
+LLVM_ROOT = 'C:/cloud/local/code/programs/emsdk/upstream/bin'
+BINARYEN_ROOT = 'C:/cloud/local/code/programs/emsdk/upstream'
+EMSCRIPTEN_ROOT = 'C:/cloud/local/code/programs/emsdk/upstream/emscripten'
+TEMP_DIR = 'C:/cygwin/tmp'
+COMPILER_ENGINE = NODE_JS
+JS_ENGINES = [NODE_JS]
+#DEMANGLE_SUPPORT = 1
+#JS_MATH = 1
+#EXPORT_ALL = 1
+#RETAIN_COMPILER_SETTINGS = 1
+WASM = 0
+

@@ -14,6 +14,7 @@ require "base64"
 require File.join(ENV["HOME"], "/dev/gems/lib/clipboard")
 require File.join(ENV["HOME"], "dev/gems/lib/repr")
 
+Pry.auto_resize!
 # don't need the pager tbh
 Pry.config.pager = false
 Pry.config.color = true
@@ -55,6 +56,23 @@ end
 
 # allows "piping" to some sort of I/O receiver
 class Object
+
+  def to_regex(quot=false)
+    if self.is_a?(String) then
+      if quot then
+        return Regexp.quote(self)
+      end
+      return self
+    elsif self.is_a?(Array) then
+      vals = self.dup
+      if quot then
+        vals.map!{|v| Regexp.quot(v.to_s) }
+      end
+      return ('\b(' + vals.join('|') + ')\b')
+    end
+    throw ArgumentError, "to_regex only supports strings and arrays (of strings)"
+    return nil
+  end
 
   def _eachdo(method, cacheinit, mtargs, parentblock, dosplat, &b)
     cache = cacheinit.dup

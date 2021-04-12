@@ -1,5 +1,11 @@
 #!/bin/zsh
 
+# cygwin bug(?): when program is run via 'cygstart --action=runas' (admin privs), then
+# the spawned process inherits windows %PATH%, causing the process to not see
+# paths like /bin, /usr/bin... you get the idea.
+# actuall PATH munging happens further down; this just sets a sensible default.
+export PATH="/bin:/usr/bin:/usr/local/bin:$PATH"
+
 if [[ -z "$ZSH_VERSION" ]]; then
   echo "this file can only work under zsh!"
   return 1
@@ -24,11 +30,16 @@ export HISTSIZE=500
 
 # init and load autocomplete as well as builtin prompt stuff
 autoload -Uz compinit promptinit
-compinit
+compinit -u
 promptinit
 
+########################################
+### ******************************** ###
+### *** TAB-COMPLETION UNFUCKERY *** ###
+### ******************************** ###
+########################################
 # disable completions for some custom commands
-compdef -d new open sh mpc man jq
+compdef -d new open sh mpc man jq node
 
 #autoload -Uz quote-and-complete-word
 #zle -N quote-and-complete-word
@@ -79,8 +90,11 @@ setopt pushdignoredups
 # i'd like to keep it, thanks
 setopt no_auto_remove_slash
 
+# stop shit like "suspended (tty output)"
+stty -tostop
+
 # default is 100. it's annoying
-export LISTMAX=500
+export LISTMAX=800
 
 # autoquote pasted URLs
 #autoload -Uz url-quote-magic
@@ -157,7 +171,7 @@ if [[ "$g_operatingsystem" == "cygwin" ]]; then
   export DISPLAY=:0.0
   # if, for whatever reason, $CYGWIN *still* isn't defined, set it up here
   # to include native support for symbolic links
-  export CYGWIN="winsymlinks:nativestrict wincmdln"
+  export CYGWIN="winsymlinks:native wincmdln"
   #export CYGWIN="winsymlinks wincmdln"
 elif [[ "$g_operatingsystem" =~ msys* ]]; then
   g_os_msys=1
@@ -283,7 +297,7 @@ userpath=(
   "${g_os_pathprefix}/cheerp/pathbin"
   "${g_os_pathprefix}/progra~2/WABT/bin/"
   "${g_os_pathprefix}/progra~2/binaryen/bin/"
-  "${g_os_pathprefix}/progra~1/Java/jre/bin/"
+  "${g_os_pathprefix}/progra~1/Java/bin/"
   "${g_os_pathprefix}/progra~1/Java/jdk/bin/"
 
   #"${g_os_pathprefix}/ProgramData/Chocolatey/bin"
@@ -373,6 +387,7 @@ if true; then
   #export PS1='%B%F{red}co%F{green}lo%F{blue}rs%f%b'
   datefmt="%D{%A[%d]/%h/%y | %H:%M:%S}"
   export PS1="[%F{blue}%M%f / %F{blue}$datefmt%f] %F{yellow}%~%f${ps_newline}%# "
+  unset datefmt ps_newline
 fi
 
 # this obviously doesn't make sense on anything other than windows
@@ -386,5 +401,17 @@ if [[ "$g_operatingsystem" == "cygwin" ]]; then
 fi
 
 # load aliases, if rc exists ...
-[[ -f "$HOME/.aliasrc" ]] && source "$HOME/.aliasrc"
+local aliasrc="$HOME/.aliasrc"
+if [[ -f "$aliasrc" ]]; then
+ source "$aliasrc"
+fi
+unset aliasrc
 
+# load ubuntu-specific(?) command_not_found hooks
+if [[ "$WSLENV" ]]; then
+  local file=/etc/zsh_command_not_found
+  if [[ -f "$file" ]]; then
+    source "$file"
+  fi
+fi
+unset file

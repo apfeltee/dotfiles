@@ -3,8 +3,14 @@
 require "pp"
 require "optparse"
 
+SPECIAL = {
+  "_jq.jq" => ".jq",
+}
+
+
 # regex to match file extension(s) for some files
 FEXTPATTERN = /\.(sh|rb|pl|ya?ml|cfg|txt)$/
+
 
 def msg(fmt, *a, **kw)
   str = (if (a.empty? && kw.empty?) then fmt else sprintf(fmt, *a, **kw) end)
@@ -44,12 +50,17 @@ def glob_and_build(glpat, keepext, &b)
   Dir.glob(File.join(__dir__, glpat)) do |path|
     fpath = File.absolute_path(path)
     basename = File.basename(fpath)
-    # replace underscore with a dot
-    destname = basename.gsub(/(^_)/, ".")
-    # remove file extension from some files
-    if not keepext then
-      if (m = destname.match(FEXTPATTERN)) != nil then
-        destname = destname.gsub(FEXTPATTERN, "")
+    destname = nil
+    if SPECIAL.key?(basename) then
+      destname = SPECIAL[basename]
+    else
+      # replace underscore with a dot
+      destname = basename.gsub(/(^_)/, ".")
+      # remove file extension from some files
+      if not keepext then
+        if (m = destname.match(FEXTPATTERN)) != nil then
+          destname = destname.gsub(FEXTPATTERN, "")
+        end
       end
     end
     # make absolute path for the destination

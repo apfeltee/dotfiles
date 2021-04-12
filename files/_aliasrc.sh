@@ -1,5 +1,8 @@
 #!/bin/bash
 
+alias sg='strgrep -nis'
+alias rrm='rm -rf'
+
 function cdd
 {
   cd "$HOME/Desktop"
@@ -19,8 +22,19 @@ function digga()
   dig +nocmd "$1" any +multiline +noall +answer;
 }
 
+function mcd()
+{
+  dest="$1"
+  mkdir -p "$dest"
+  cd "$dest"
+}
+
 # some pretty common cd aliases
 alias l=ls
+alias ll='ls -l'
+alias la='ls -la'
+alias lss='ls -1 --sort=time'
+alias lsr='ls -1 --sort=time -r'
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."

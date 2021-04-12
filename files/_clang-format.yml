@@ -3,7 +3,7 @@
 ## generic/unsorted options ##
 ##############################
 #ColumnLimit: 520
-ColumnLimit: 120
+#ColumnLimit: -1
 AccessModifierOffset: -4
 AlignEscapedNewlinesLeft: true
 Standard: Auto
@@ -46,7 +46,8 @@ IndentPPDirectives: BeforeHash
 ####################################
 ## other options (todo: sort me!) ##
 ####################################
-AccessModifierIndentation: true
+BreakStringLiterals: false
+#AccessModifierIndentation: true
 #AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
